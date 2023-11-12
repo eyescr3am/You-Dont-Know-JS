@@ -73,7 +73,7 @@ It's not very common to see this usage, because it's rarer that you need to spec
 
 ### Accessor Properties
 
-A property descriptor usually defines a `value` property, as shown above. However, a special kind of property, known as an "accessor property" (aka, a getter/setter), can be defined. For these a property like this, its descriptor does not define a fixed `value` property, but would instead look something like this:
+A property descriptor usually defines a `value` property, as shown above. However, a special kind of property, known as an "accessor property" (aka, a getter/setter), can be defined. For a property like this, its descriptor does not define a fixed `value` property, but instead methods `get()` and `set(v)`, invoked whenever reading or assigning to a property:
 
 ```js
 {
@@ -252,11 +252,55 @@ In non-strict-mode, an assignment that creates a new property will silently fail
 
 ### Sealed
 
-// TODO
+Adding on extensibility, besides preventing the creation of new properties on an object, **sealing** it also disables the modification of accessor properties, in effect it's the same as setting `configurable = false` on every existing property of an object and disallowing any addition/removal of properties. Importantly, values of properties can still be reassigned.
+
+```js
+let myObj = {
+  favoriteNumber: 42,
+  firstName: "Kyle"
+};
+
+Object.seal(myObj);
+
+myObj.programmer = true; // fails with exception in strict mode, silently in non-strict
+Object.defineProperty(myObj, "firstName", { //TypeError: Connot redefine property: firstName
+  get() {
+    return "KYLE";
+  },
+});
+myObj.favoriteNumber = 13;
+
+console.log(myObj.programmer); // undefined
+console.log(myObj.favoriteNumber); // 13
+
+```
+An attempt to redefine a property on a sealed object will result in a `TypeError`. 
+In non-strict-mode, an assignment that creates a new property will still, fail only silently, whereas in strict mode an exception will be thrown.
 
 ### Frozen
 
-// TODO
+Freezing an object, in addition to the previous two restrictions of preventing property creation/deletion and property accessor modification, prohibits changing the **values** of any properties of an object. 
+
+```js
+let myObj = {
+  favoriteNumber: 42,
+  firstName: "Kyle",
+};
+
+Object.freeze(myObj);
+
+myObj.programmer = true; // fails silently in non-strict mode, exception in strict.
+Object.defineProperty(myNObj, "firstName", { // TypeError: Connot redefine property: firstName
+  get() {
+    return "KYLE";
+  },
+});
+myNObj.favoriteNumber = 13; // fails silently in non-strict mode, exception in strict.
+
+console.log(myNObj.programmer); // undefined
+console.log(myNObj.favoriteNumber); // 42
+```
+As with other modifications, this one is also only enforced with an error in **strict mode**. In non-strict-mode, the assignment expression fails silently. 
 
 ## Extending The MOP
 
